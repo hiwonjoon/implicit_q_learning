@@ -100,6 +100,34 @@ class D4RLDataset(Dataset):
                              np.float32),
                          size=len(dataset['observations']))
 
+class RobomimicDataset(Dataset):
+    def __init__(self,
+                 env: gym.Env):
+        trajs = env.get_dataset()
+
+        obs, acs, rs, dones, next_obs = [], [], [], [], []
+
+        for traj in trajs:
+            obs.append(traj.states[:-1])
+            acs.append(traj.actions)
+            rs.append(traj.rewards)
+            dones.append(traj.dones)
+            next_obs.append(traj.states[1:])
+
+        obs = np.concatenate(obs,axis=0)
+        acs = np.concatenate(acs,axis=0)
+        rs = np.concatenate(rs,axis=0)
+        dones = np.concatenate(dones,axis=0)
+        next_obs = np.concatenate(next_obs,axis=0)
+
+        super().__init__(observations=obs.astype(np.float32),
+                         actions=acs.astype(np.float32),
+                         rewards=rs.astype(np.float32),
+                         masks=1.0 - dones.astype(np.float32),
+                         dones_float=dones.astype(np.float32),
+                         next_observations=next_obs.astype(
+                             np.float32),
+                         size=len(obs))
 
 class ReplayBuffer(Dataset):
     def __init__(self, observation_space: gym.spaces.Box, action_dim: int,

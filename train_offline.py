@@ -9,7 +9,7 @@ from ml_collections import config_flags
 from tensorboardX import SummaryWriter
 
 import wrappers
-from dataset_utils import D4RLDataset, split_into_trajectories
+from dataset_utils import D4RLDataset, RobomimicDataset, split_into_trajectories
 from evaluation import evaluate
 from learner import Learner
 
@@ -54,7 +54,13 @@ def normalize(dataset):
 
 def make_env_and_dataset(env_name: str,
                          seed: int) -> Tuple[gym.Env, D4RLDataset]:
-    env = gym.make(env_name)
+    try:
+        env = gym.make(env_name)
+    except:
+        import robomimic_env
+        env = gym.make(env_name)
+
+        robomimic = True
 
     env = wrappers.EpisodeMonitor(env)
     env = wrappers.SinglePrecision(env)
@@ -63,7 +69,10 @@ def make_env_and_dataset(env_name: str,
     env.action_space.seed(seed)
     env.observation_space.seed(seed)
 
-    dataset = D4RLDataset(env)
+    if robomimic:
+        dataset = RobomimicDataset(env)
+    else:
+        dataset = D4RLDataset(env)
 
     if 'antmaze' in FLAGS.env_name:
         dataset.rewards -= 1.0
