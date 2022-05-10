@@ -56,6 +56,8 @@ def make_env_and_dataset(env_name: str,
                          seed: int) -> Tuple[gym.Env, D4RLDataset]:
     try:
         env = gym.make(env_name)
+        robomimic = False
+
     except:
         import robomimic_env
         env = gym.make(env_name)
