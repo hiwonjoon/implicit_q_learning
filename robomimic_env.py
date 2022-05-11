@@ -10,7 +10,6 @@ from pathlib import Path
 import collections
 import h5py
 import numpy as np
-import gin
 from filelock import FileLock
 
 import gym
@@ -107,6 +106,13 @@ register(
     kwargs={'task':'transport','dataset_type':'mh','hdf5_type':'low_dim'}
 )
 
+register(
+    id='toolhang-low-ph-v0',
+    entry_point='robomimic_env:RobomimicLowDimEnv',
+    max_episode_steps=700,
+    kwargs={'task':'tool_hang','dataset_type':'ph','hdf5_type':'low_dim'}
+)
+
 ##############################################
 ##############################################
 ##############################################
@@ -147,7 +153,6 @@ def _get_modal(task,dataset_type,hdf5_type):
         assert hdf5_type == 'raw'
         raise NotImplementedError
 
-@gin.configurable
 class RobomimicLowDimEnv(gym.Env):
     @staticmethod
     def initialize(task,dataset_type,hdf5_type):
@@ -237,8 +242,7 @@ class RobomimicLowDimEnv(gym.Env):
         else:
             assert False
 
-    @gin.configurable
-    def get_dataset(self,split='all',sanity_check=False,ignore_done=True,truncate_if_done=False):
+    def get_dataset(self,split='all',sanity_check=False,ignore_done=True,truncate_if_done=False,shape_reward=False):
         assert split in self.env_splits.keys(), f'{split} not in {self.env_splits.keys()}'
 
         with h5py.File(self.dataset_path, 'r') as f:
@@ -264,7 +268,7 @@ class RobomimicLowDimEnv(gym.Env):
                 traj = Trajectory(
                     states = np.concatenate([obs,next_obs[-1:]],axis=0).astype(np.float32)[:traj_len+1],
                     actions = actions.astype(np.float32)[:traj_len],
-                    rewards = rewards.astype(np.float32)[:traj_len],
+                    rewards = rewards.astype(np.float32)[:traj_len] - 1. if shape_reward else rewards.astype(np.float32)[:traj_len],
                     dones = np.zeros_like(dones.astype(bool))[:traj_len] if ignore_done else dones[:traj_len],
                     frames = None,
                 )

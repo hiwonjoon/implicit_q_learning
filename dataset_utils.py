@@ -103,7 +103,7 @@ class D4RLDataset(Dataset):
 class RobomimicDataset(Dataset):
     def __init__(self,
                  env: gym.Env):
-        trajs = env.get_dataset()
+        trajs = env.get_dataset(ignore_done=False, truncate_if_done=False, shape_reward=True)
 
         obs, acs, rs, dones, next_obs = [], [], [], [], []
 
