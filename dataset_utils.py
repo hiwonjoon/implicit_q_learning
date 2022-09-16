@@ -100,6 +100,42 @@ class D4RLDataset(Dataset):
                              np.float32),
                          size=len(dataset['observations']))
 
+
+class D4RLDataset_MixRandom(Dataset):
+    def __init__(self,
+                 env: gym.Env,
+                 mix_random: int):
+        dataset = D4RLDataset(env)
+        env_id = env.spec.id
+
+        env_name = env_id.split('-')[0]
+        version = env_id.split('-')[-1]
+
+        random_env = gym.make(f'{env_name}-random-{version}')
+        random_dataset = D4RLDataset(random_env)
+
+        _idxes = np.random.choice(random_dataset.size, mix_random)
+        #_idxes = slice(mix_random)
+
+        observations = np.concatenate([dataset.observations,random_dataset.observations[_idxes]],axis=0)
+        actions = np.concatenate([dataset.actions,random_dataset.actions[_idxes]],axis=0)
+        rewards = np.concatenate([dataset.rewards,random_dataset.rewards[_idxes]],axis=0)
+        masks = np.concatenate([dataset.masks,random_dataset.masks[_idxes]],axis=0)
+        dones_float = np.concatenate([dataset.dones_float,random_dataset.dones_float[_idxes]],axis=0)
+        next_observations = np.concatenate([dataset.next_observations,random_dataset.next_observations[_idxes]],axis=0)
+        size = len(observations)
+
+        assert size == dataset.size + mix_random
+
+        return super().__init__(
+            observations,
+            actions,
+            rewards,
+            masks,
+            dones_float,
+            next_observations,
+            size)
+
 class RobomimicDataset(Dataset):
     def __init__(self,
                  env: gym.Env):
