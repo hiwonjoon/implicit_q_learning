@@ -24,6 +24,7 @@ flags.DEFINE_integer('log_interval', 1000, 'Logging interval.')
 flags.DEFINE_integer('eval_interval', 5000, 'Eval interval.')
 flags.DEFINE_integer('batch_size', 256, 'Mini batch size.')
 flags.DEFINE_integer('mix_random', int(-1), 'Number of transition tuples from random dataset')
+flags.DEFINE_integer('partial_original', int(-1), 'Number of transition tuples from the given dataset')
 flags.DEFINE_integer('max_steps', int(1e6), 'Number of training steps.')
 flags.DEFINE_boolean('tqdm', False, 'Use tqdm progress bar.')
 config_flags.DEFINE_config_file(
@@ -56,6 +57,7 @@ def normalize(dataset):
 def make_env_and_dataset(env_name: str,
                          seed: int,
                          mix_random: int,
+                         partial_original: int,
                          ) -> Tuple[gym.Env, D4RLDataset]:
     try:
         env = gym.make(env_name)
@@ -79,7 +81,7 @@ def make_env_and_dataset(env_name: str,
         if mix_random < 0:
             dataset = D4RLDataset(env)
         else:
-            dataset = D4RLDataset_MixRandom(env,mix_random)
+            dataset = D4RLDataset_MixRandom(env,mix_random,partial_original)
 
     if 'antmaze' in FLAGS.env_name:
         dataset.rewards -= 1.0
@@ -98,7 +100,7 @@ def main(_):
                                    write_to_disk=True)
     os.makedirs(FLAGS.save_dir, exist_ok=True)
 
-    env, dataset = make_env_and_dataset(FLAGS.env_name, FLAGS.seed, FLAGS.mix_random)
+    env, dataset = make_env_and_dataset(FLAGS.env_name, FLAGS.seed, FLAGS.mix_random, FLAGS.partial_original)
 
     kwargs = dict(FLAGS.config)
     agent = Learner(FLAGS.seed,
