@@ -101,40 +101,40 @@ class D4RLDataset(Dataset):
                          size=len(dataset['observations']))
 
 
-class D4RLDataset_MixRandom(Dataset):
+class D4RLDataset_Mix(Dataset):
     def __init__(self,
                  env: gym.Env,
-                 mix_random: int,
-                 partial_original: int,
+                 num_original: int,
+                 mix_env_id: str,
+                 num_mix: int,
                  ):
         dataset = D4RLDataset(env)
-        env_id = env.spec.id
 
-        env_name = env_id.split('-')[0]
-        version = env_id.split('-')[-1]
+        mix_env = gym.make(mix_env_id)
+        mix_dataset = D4RLDataset(mix_env)
 
-        random_env = gym.make(f'{env_name}-random-{version}')
-        random_dataset = D4RLDataset(random_env)
-
-        #_idxes = np.random.choice(random_dataset.size, mix_random)
-        mix_random = min(random_dataset.size,mix_random)
-        _idxes = np.arange(0,mix_random)
-
-        if partial_original < 0:
-            partial_original = dataset.size
+        if num_mix < 0:
+            num_mix= mix_dataset.size
         else:
-            partial_original = min(dataset.size,partial_original)
-        _original_idxes = np.arange(0,partial_original)
+            num_mix= min(mix_dataset.size,num_mix)
 
-        observations = np.concatenate([dataset.observations[_original_idxes],random_dataset.observations[_idxes]],axis=0)
-        actions = np.concatenate([dataset.actions[_original_idxes],random_dataset.actions[_idxes]],axis=0)
-        rewards = np.concatenate([dataset.rewards[_original_idxes],random_dataset.rewards[_idxes]],axis=0)
-        masks = np.concatenate([dataset.masks[_original_idxes],random_dataset.masks[_idxes]],axis=0)
-        dones_float = np.concatenate([dataset.dones_float[_original_idxes],random_dataset.dones_float[_idxes]],axis=0)
-        next_observations = np.concatenate([dataset.next_observations[_original_idxes],random_dataset.next_observations[_idxes]],axis=0)
+        _idxes = np.arange(0,num_mix)
+
+        if num_original < 0:
+            num_original = dataset.size
+        else:
+            num_original = min(dataset.size,num_original)
+        _original_idxes = np.arange(0,num_original)
+
+        observations = np.concatenate([dataset.observations[_original_idxes],mix_dataset.observations[_idxes]],axis=0)
+        actions = np.concatenate([dataset.actions[_original_idxes],mix_dataset.actions[_idxes]],axis=0)
+        rewards = np.concatenate([dataset.rewards[_original_idxes],mix_dataset.rewards[_idxes]],axis=0)
+        masks = np.concatenate([dataset.masks[_original_idxes],mix_dataset.masks[_idxes]],axis=0)
+        dones_float = np.concatenate([dataset.dones_float[_original_idxes],mix_dataset.dones_float[_idxes]],axis=0)
+        next_observations = np.concatenate([dataset.next_observations[_original_idxes],mix_dataset.next_observations[_idxes]],axis=0)
         size = len(observations)
 
-        assert size == partial_original + mix_random
+        assert size == num_original + num_mix
 
         return super().__init__(
             observations,
